@@ -1,0 +1,11 @@
+# PyInstaller artefacts
+build/
+dist/
+*.spec
+
+# Inno Setup output
+Output/
+
+# Local Python cache
+__pycache__/
+*.pyc

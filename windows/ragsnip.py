@@ -239,14 +239,78 @@ HOSTS = {
 }
 
 
+# --- Win32 clipboard via ctypes ---------------------------------------------
+# Using the Win32 API directly avoids spawning clip.exe / powershell.exe,
+# which would flash a console window every time when running as the bundled
+# --noconsole .exe, and adds ~1-2s of latency per copy.
+
+_CF_UNICODETEXT = 13
+_CF_DIB = 8
+_GMEM_MOVEABLE = 0x0002
+
+_user32 = None
+_kernel32 = None
+_clipboard_ready = False
+
+
+def _init_clipboard() -> None:
+    """Bind the Win32 functions we need. Module-level access to
+    ctypes.windll would fail import on non-Windows hosts, so do it lazily."""
+    global _user32, _kernel32, _clipboard_ready
+    if _clipboard_ready:
+        return
+    if sys.platform != "win32":
+        raise RuntimeError("Win32 clipboard requires Windows")
+    _user32 = ctypes.windll.user32
+    _kernel32 = ctypes.windll.kernel32
+
+    _user32.OpenClipboard.argtypes = [ctypes.c_void_p]
+    _user32.OpenClipboard.restype = ctypes.c_int
+    _user32.EmptyClipboard.restype = ctypes.c_int
+    _user32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
+    _user32.SetClipboardData.restype = ctypes.c_void_p
+    _user32.CloseClipboard.restype = ctypes.c_int
+
+    _kernel32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
+    _kernel32.GlobalAlloc.restype = ctypes.c_void_p
+    _kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+    _kernel32.GlobalLock.restype = ctypes.c_void_p
+    _kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+    _kernel32.GlobalUnlock.restype = ctypes.c_int
+    _kernel32.GlobalFree.argtypes = [ctypes.c_void_p]
+    _kernel32.GlobalFree.restype = ctypes.c_void_p
+
+    _clipboard_ready = True
+
+
+def _set_clipboard(format_id: int, data: bytes) -> None:
+    _init_clipboard()
+    if not _user32.OpenClipboard(None):
+        raise RuntimeError("OpenClipboard failed")
+    h_mem = None
+    try:
+        _user32.EmptyClipboard()
+        h_mem = _kernel32.GlobalAlloc(_GMEM_MOVEABLE, len(data))
+        if not h_mem:
+            raise RuntimeError("GlobalAlloc failed")
+        p_mem = _kernel32.GlobalLock(h_mem)
+        if not p_mem:
+            raise RuntimeError("GlobalLock failed")
+        ctypes.memmove(p_mem, data, len(data))
+        _kernel32.GlobalUnlock(h_mem)
+        if not _user32.SetClipboardData(format_id, h_mem):
+            raise RuntimeError("SetClipboardData failed")
+        h_mem = None  # ownership transferred to the OS — don't free
+    finally:
+        if h_mem:
+            _kernel32.GlobalFree(h_mem)
+        _user32.CloseClipboard()
+
+
 def copy_to_clipboard(text: str) -> None:
-    """Pipe UTF-16 LE bytes to clip.exe (built into Windows since Vista)."""
-    subprocess.run(
-        "clip",
-        input=text.encode("utf-16le"),
-        shell=True,
-        check=True,
-    )
+    """Place a string on the Windows clipboard as CF_UNICODETEXT."""
+    payload = text.encode("utf-16-le") + b"\x00\x00"
+    _set_clipboard(_CF_UNICODETEXT, payload)
 
 
 def fetch_image_bytes(url: str, timeout: int = 30) -> bytes:
@@ -261,32 +325,19 @@ def fetch_image_bytes(url: str, timeout: int = 30) -> bytes:
 
 
 def copy_image_to_clipboard(image_bytes: bytes) -> None:
-    """Save bytes to a temp file and call PowerShell to put it on the
-    Windows clipboard via System.Windows.Forms.Clipboard.SetImage."""
-    tmp = Path(tempfile.NamedTemporaryFile(suffix=".png", delete=False).name)
-    tmp.write_bytes(image_bytes)
-    try:
-        ps = (
-            "Add-Type -AssemblyName System.Drawing;"
-            "Add-Type -AssemblyName System.Windows.Forms;"
-            f"$img = [System.Drawing.Image]::FromFile('{tmp}');"
-            "[System.Windows.Forms.Clipboard]::SetImage($img);"
-            "$img.Dispose();"
-        )
-        result = subprocess.run(
-            ["powershell", "-NoProfile", "-STA", "-Command", ps],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"PowerShell clipboard failed: {result.stderr.strip() or result.stdout.strip()}"
-            )
-    finally:
-        try:
-            tmp.unlink(missing_ok=True)
-        except OSError:
-            pass
+    """Convert image bytes -> BMP, strip the 14-byte BITMAPFILEHEADER, and
+    publish the remainder as CF_DIB (the standard Windows clipboard format
+    for bitmaps; CF_DIB starts at BITMAPINFOHEADER, not the file header)."""
+    from PIL import Image
+    import io
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    out = io.BytesIO()
+    img.save(out, format="BMP")
+    bmp = out.getvalue()
+    if len(bmp) < 14 or bmp[:2] != b"BM":
+        raise RuntimeError("Could not encode image as BMP")
+    _set_clipboard(_CF_DIB, bmp[14:])
 
 
 # ---------------------------- history & thumbnails ----------------------------

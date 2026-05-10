@@ -7,9 +7,8 @@ PublisherUrl: https://github.com/RagnarSir
 PublisherSupportUrl: https://github.com/RagnarSir/ragsnip/issues
 PackageName: RagSnip
 PackageUrl: https://github.com/RagnarSir/ragsnip
-# TODO: pick a license. If you add a LICENSE file (e.g. MIT) to the repo,
-# change this to the SPDX identifier ("MIT", "Apache-2.0", etc.).
-License: NoAssertion
+License: MIT
+LicenseUrl: https://github.com/RagnarSir/ragsnip/blob/main/LICENSE
 ShortDescription: A tiny snipping tool that uploads region screenshots and copies the URL to the clipboard.
 Description: |
   RagSnip captures a region of the screen using the built-in Windows

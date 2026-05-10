@@ -32,7 +32,7 @@ A tiny snipping tool for **Linux** and **Windows**. Drag a region → it uploads
 - **One-drag capture** — `gnome-screenshot -a` on Linux, the Snip & Sketch overlay (`ms-screenclip:`) on Windows
 - **Auto-upload** to catbox.moe (default), 0x0.st, or Imgur
 - **URL on clipboard** the instant the upload finishes
-- **Persistent GUI** with a thumbnail history — click any row to re-copy
+- **Persistent GUI** with a thumbnail history — click a row to re-copy the URL, **right-click** for a menu (Copy URL / Copy image / Open in browser)
 - **Settings dialog** — host, Imgur Client-ID, "always on top", history size, clear history
 - **Hotkey-friendly** — one-shot CLI mode (`ragsnip` / `snip` on Linux, `RagSnip.exe --cli` on Windows)
 - **Desktop notifications** with the link (Linux only — Windows is silent, see [Limitations](#limitations-on-windows))

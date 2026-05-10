@@ -21,6 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+import webbrowser
 from pathlib import Path
 
 DEFAULT_CLIENT_ID = "313baf0c7b4d3ff"  # Flameshot's public shared ID (rate-limited)
@@ -234,6 +235,42 @@ def copy_to_clipboard(text: str) -> None:
         input=text.encode("utf-8"),
         check=True,
     )
+
+
+def fetch_image_bytes(url: str, timeout: int = 30) -> bytes:
+    """Download URL and return the raw bytes."""
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return response.read()
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"HTTP {e.code} fetching {url}") from None
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Network error fetching {url}: {e.reason}") from None
+
+
+def copy_image_to_clipboard(image_bytes: bytes, mime: str = "image/png") -> None:
+    """Put raw image bytes on the X11 clipboard via xclip.
+
+    xclip needs to keep running to serve the data to other apps until
+    something else takes the clipboard. start_new_session detaches it
+    from the parent process group so we don't need to wait().
+    """
+    require_tool("xclip")
+    proc = subprocess.Popen(
+        ["xclip", "-selection", "clipboard", "-t", mime],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    try:
+        assert proc.stdin is not None
+        proc.stdin.write(image_bytes)
+        proc.stdin.close()
+    except OSError as e:
+        proc.kill()
+        raise RuntimeError(f"xclip failed: {e}") from None
 
 
 # ---------------------------- history & thumbnails ----------------------------
@@ -735,12 +772,39 @@ def run_gui(cfg: dict) -> int:
         def _click(_e):
             try:
                 copy_to_clipboard(url)
-                set_status(f"Copied: {url}")
+                set_status(f"Copied URL: {url}")
             except Exception as ex:
                 set_status(f"Copy failed: {ex}")
 
+        def _copy_image_async():
+            set_status(f"Downloading image…")
+
+            def worker():
+                try:
+                    data = fetch_image_bytes(url)
+                    copy_image_to_clipboard(data)
+                    root.after(0, lambda: set_status(f"Copied image to clipboard ({len(data) // 1024} KB)"))
+                except Exception as ex:
+                    msg = f"Copy image failed: {ex}"
+                    root.after(0, lambda m=msg: set_status(m))
+
+            threading.Thread(target=worker, daemon=True).start()
+
+        def _show_menu(e):
+            menu = tk.Menu(root, tearoff=0)
+            menu.add_command(label="Copy URL", command=lambda: _click(None))
+            menu.add_command(label="Copy image", command=_copy_image_async)
+            menu.add_separator()
+            menu.add_command(label="Open in browser",
+                             command=lambda: webbrowser.open(url))
+            try:
+                menu.tk_popup(e.x_root, e.y_root)
+            finally:
+                menu.grab_release()
+
         for w in widgets:
             w.bind("<Button-1>", _click)
+            w.bind("<Button-3>", _show_menu)
             w.bind("<Enter>", _enter)
             w.bind("<Leave>", _leave)
 

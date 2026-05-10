@@ -90,6 +90,14 @@ Then bind any key (e.g. `Ctrl+PrintScreen`).
 
 > Download. Double-click. Done.
 
+**Option A — winget** (once submitted to the community repo):
+
+```powershell
+winget install RagnarSir.RagSnip
+```
+
+**Option B — direct download:**
+
 1. Go to the [Releases page](https://github.com/RagnarSir/ragsnip/releases).
 2. Download `RagSnip-Setup-<version>.exe`.
 3. Double-click it. The wizard installs RagSnip per-user (no admin / UAC) under `%LOCALAPPDATA%\Programs\RagSnip\` and adds a Start Menu shortcut.
@@ -183,6 +191,9 @@ history_size=20        # 1–200
 | `windows/ragsnip.py`                       | Windows app (single file, GUI-default)        |
 | `windows/RagSnip.iss`                      | Inno Setup script for the installer           |
 | `windows/build.ps1`                        | PyInstaller → Inno Setup chain (maintainer)   |
+| `windows/ragsnip.ico`                      | Multi-resolution app icon (16/32/48/64/128/256) |
+| `windows/make_icon.py`                     | Pillow script that regenerates the icon       |
+| `winget/`                                  | winget manifests + submission docs            |
 | `.github/workflows/build-windows.yml`      | CI: builds the Windows installer on tag push  |
 
 ## Why "RagSnip"?

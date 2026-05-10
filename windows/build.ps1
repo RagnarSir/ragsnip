@@ -20,6 +20,7 @@ try {
         --noconsole `
         --onefile `
         --name RagSnip `
+        --icon ragsnip.ico `
         --clean `
         --distpath dist `
         --workpath build `

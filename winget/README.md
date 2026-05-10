@@ -12,7 +12,7 @@ winget install RagnarSir.RagSnip
 
 ## When to update
 
-Every time you cut a new release (`v1.0.1`, `v1.0.2`, …):
+Every time you cut a new release (`v1.0.3`, `v1.0.4`, …):
 
 1. Bump `PackageVersion` in all three YAMLs to the new version.
 2. Update `InstallerUrl` in `*.installer.yaml` to the new release tag.
@@ -27,13 +27,13 @@ page, compute its SHA256:
 
 ```bash
 # from the repo root, using gh + sha256sum (Linux/macOS):
-gh release download v1.0.1 -p "RagSnip-Setup-*.exe" -O /tmp/RagSnip-Setup.exe
+gh release download v1.0.2 -p "RagSnip-Setup-*.exe" -O /tmp/RagSnip-Setup.exe
 sha256sum /tmp/RagSnip-Setup.exe
 ```
 
 ```powershell
 # Windows equivalent:
-Invoke-WebRequest https://github.com/RagnarSir/ragsnip/releases/download/v1.0.1/RagSnip-Setup-1.0.1.exe -OutFile RagSnip-Setup.exe
+Invoke-WebRequest https://github.com/RagnarSir/ragsnip/releases/download/v1.0.2/RagSnip-Setup-1.0.2.exe -OutFile RagSnip-Setup.exe
 certutil -hashfile RagSnip-Setup.exe SHA256
 ```
 
@@ -47,8 +47,8 @@ the SHA256 step:
 ```powershell
 winget install Microsoft.WingetCreate
 wingetcreate update RagnarSir.RagSnip `
-    --version 1.0.1 `
-    --urls https://github.com/RagnarSir/ragsnip/releases/download/v1.0.1/RagSnip-Setup-1.0.1.exe `
+    --version 1.0.2 `
+    --urls https://github.com/RagnarSir/ragsnip/releases/download/v1.0.2/RagSnip-Setup-1.0.2.exe `
     --submit
 ```
 
@@ -62,8 +62,8 @@ If you'd rather do it manually:
 
 1. Fork [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs).
 2. In your fork, copy these three YAMLs into `manifests/r/RagnarSir/RagSnip/<version>/`.
-3. Validate locally on a Windows machine: `winget validate --manifest manifests\r\RagnarSir\RagSnip\1.0.1`
-4. Test install (sandbox recommended): `winget install --manifest manifests\r\RagnarSir\RagSnip\1.0.1`
+3. Validate locally on a Windows machine: `winget validate --manifest manifests\r\RagnarSir\RagSnip\1.0.2`
+4. Test install (sandbox recommended): `winget install --manifest manifests\r\RagnarSir\RagSnip\1.0.2`
 5. Open a PR back to `microsoft/winget-pkgs`. The bot runs CI checks; expect human review within a few days for new packages, hours for updates.
 
 ## License caveat

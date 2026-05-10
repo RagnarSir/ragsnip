@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
 PackageIdentifier: RagnarSir.RagSnip
-PackageVersion: 1.0.1
+PackageVersion: 1.0.2
 InstallerType: inno
 Scope: user
 ReleaseDate: 2026-05-10  # update on each release
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/RagnarSir/ragsnip/releases/download/v1.0.1/RagSnip-Setup-1.0.1.exe
-    # Compute with: certutil -hashfile RagSnip-Setup-1.0.1.exe SHA256
+    InstallerUrl: https://github.com/RagnarSir/ragsnip/releases/download/v1.0.2/RagSnip-Setup-1.0.2.exe
+    # Compute with: certutil -hashfile RagSnip-Setup-1.0.2.exe SHA256
     # (or `sha256sum` on Linux/macOS)
     InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
 ManifestType: installer

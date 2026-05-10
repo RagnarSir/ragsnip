@@ -3,7 +3,7 @@
 ; (or run windows\build.ps1 to chain PyInstaller + ISCC)
 
 #define MyAppName    "RagSnip"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "RagnarSir"
 #define MyAppURL     "https://github.com/RagnarSir/ragsnip"
 #define MyAppExeName "RagSnip.exe"

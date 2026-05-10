@@ -29,13 +29,13 @@ A tiny snipping tool for **Linux** and **Windows**. Drag a region → it uploads
 
 ## Features
 
-- **One-drag capture** via `gnome-screenshot -a`
+- **One-drag capture** — `gnome-screenshot -a` on Linux, the Snip & Sketch overlay (`ms-screenclip:`) on Windows
 - **Auto-upload** to catbox.moe (default), 0x0.st, or Imgur
 - **URL on clipboard** the instant the upload finishes
-- **Desktop notification** with the link
-- **Persistent GUI** with a thumbnail history (click any row to re-copy)
+- **Persistent GUI** with a thumbnail history — click any row to re-copy
 - **Settings dialog** — host, Imgur Client-ID, "always on top", history size, clear history
-- **One-shot CLI** for keyboard shortcuts (`ragsnip` / `snip`)
+- **Hotkey-friendly** — one-shot CLI mode (`ragsnip` / `snip` on Linux, `RagSnip.exe --cli` on Windows)
+- **Desktop notifications** with the link (Linux only — Windows is silent, see [Limitations](#limitations-on-windows))
 
 ## Requirements
 
@@ -117,23 +117,34 @@ For an instant hotkey snip with no GUI, edit the shortcut's **Target** field to 
 - **Clipboard briefly holds the captured image** before RagSnip replaces it with the URL. The contents your clipboard had before the snip are not preserved.
 - The Snip & Sketch overlay is the native Windows region selector — its UX comes from Windows, not RagSnip.
 
-### Building from source (maintainers)
+### Releasing & building (maintainers)
 
-The Windows installer is built by chaining PyInstaller and Inno Setup. To reproduce a release:
+Two paths produce the same `RagSnip-Setup-<version>.exe`. **Use CI for real releases**; local builds are for iterating on the code.
 
-1. Install the prerequisites on a Windows machine:
-   - Python 3.9+ (from [python.org](https://www.python.org/downloads/) or the Microsoft Store; tick *Add to PATH* during install)
-   - Inno Setup 6 ([jrsoftware.org/isdl.php](https://jrsoftware.org/isdl.php) or `choco install innosetup`)
+#### Path A — CI build (no Windows machine needed)
 
-2. From a PowerShell prompt in the repo root:
-   ```powershell
-   cd windows
-   powershell -ExecutionPolicy Bypass -File .\build.ps1
-   ```
+The workflow at `.github/workflows/build-windows.yml` chains PyInstaller and Inno Setup on a `windows-latest` runner. Two ways to trigger it:
 
-3. The output is `windows\Output\RagSnip-Setup-<version>.exe`. Upload it as a release asset on GitHub.
+- **Manual smoke-test** — *Actions → Build Windows installer → Run workflow*. Output is downloadable as a workflow artifact (30-day retention). No public release is created.
+- **Tagged release** — push a `v*` tag and the workflow attaches the installer to a fresh GitHub Release with auto-generated notes:
+  ```bash
+  # 1. Bump MyAppVersion in windows/RagSnip.iss to match the tag
+  git commit -am "Release v1.0.1"
+  git tag v1.0.1
+  git push origin main v1.0.1
+  ```
+  After ~5 min the new entry appears at [Releases](https://github.com/RagnarSir/ragsnip/releases) with `RagSnip-Setup-1.0.1.exe` attached.
 
-To bump the version, edit `MyAppVersion` in `windows\RagSnip.iss` and re-run `build.ps1`.
+#### Path B — Local build
+
+On a Windows machine, install Python 3.9+ (with *Add to PATH*) and Inno Setup 6 (`choco install innosetup`), then:
+
+```powershell
+cd windows
+powershell -ExecutionPolicy Bypass -File .\build.ps1
+```
+
+Output: `windows\Output\RagSnip-Setup-<version>.exe`.
 
 ## Hosts
 
@@ -164,14 +175,15 @@ history_size=20        # 1–200
 
 ## Files in this repo
 
-| File                          | Purpose                                       |
-|-------------------------------|-----------------------------------------------|
-| `ragsnip.py`                  | Linux app (single file, CLI + Tk GUI)         |
-| `ragsnip.desktop`             | Cinnamon / freedesktop menu entry             |
-| `install.sh`                  | Linux installer + legacy-path migration       |
-| `windows/ragsnip.py`          | Windows app (single file, GUI-default)        |
-| `windows/RagSnip.iss`         | Inno Setup script for the installer           |
-| `windows/build.ps1`           | PyInstaller → Inno Setup chain (maintainer)   |
+| File                                       | Purpose                                       |
+|--------------------------------------------|-----------------------------------------------|
+| `ragsnip.py`                               | Linux app (single file, CLI + Tk GUI)         |
+| `ragsnip.desktop`                          | Cinnamon / freedesktop menu entry             |
+| `install.sh`                               | Linux installer + legacy-path migration       |
+| `windows/ragsnip.py`                       | Windows app (single file, GUI-default)        |
+| `windows/RagSnip.iss`                      | Inno Setup script for the installer           |
+| `windows/build.ps1`                        | PyInstaller → Inno Setup chain (maintainer)   |
+| `.github/workflows/build-windows.yml`      | CI: builds the Windows installer on tag push  |
 
 ## Why "RagSnip"?
 

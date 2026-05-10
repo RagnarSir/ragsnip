@@ -1,0 +1,62 @@
+name: Build Windows installer
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed for the release upload step
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        working-directory: windows
+        shell: pwsh
+        run: .\build.ps1
+
+      - name: Locate built installer
+        id: locate
+        working-directory: windows
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path "Output\RagSnip-Setup-*.exe" |
+                 Sort-Object LastWriteTime -Descending |
+                 Select-Object -First 1
+          if (-not $exe) { throw "No installer found in windows\Output\" }
+          "path=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+          "name=$($exe.Name)"     >> $env:GITHUB_OUTPUT
+          Write-Host "Installer: $($exe.FullName) ($([math]::Round($exe.Length / 1MB, 1)) MB)"
+
+      - name: Upload installer as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RagSnip-Setup
+          path: windows/Output/RagSnip-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach installer to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: windows/Output/RagSnip-Setup-*.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=RagSnip
+GenericName=Screen Snipping Tool
+Comment=Capture a screen region and upload it
+Exec=ragsnip --gui
+StartupWMClass=RagSnip
+Icon=applets-screenshooter
+Terminal=false
+Categories=Graphics;Utility;
+Keywords=screenshot;snip;ragsnip;capture;
+StartupNotify=false
